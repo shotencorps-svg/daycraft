@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DAYCRAFT</title>
+<style>
+:root{--ink:#202033;--muted:#77788c;--line:#e8e8f0;--bg:#f6f6fb;--purple:#6556d9;--pale:#eeecff;--green:#23866a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif}
+header{padding:22px 18px 14px;background:white;border-bottom:1px solid var(--line)}.brand{font-size:23px;font-weight:800;letter-spacing:.04em}.sub{color:var(--muted);font-size:12px;margin-top:3px}
+nav{display:flex;gap:8px;padding:12px 16px;background:white;position:sticky;top:0;z-index:3;border-bottom:1px solid var(--line)}
+nav button{flex:1;border:0;border-radius:12px;padding:12px 8px;background:#f2f2f7;color:#666;font-weight:700;font-size:14px}
+nav button.active{background:var(--purple);color:white}
+main{max-width:760px;margin:auto;padding:16px}.panel{display:none}.panel.active{display:block}
+.card{background:white;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 3px 14px #24244a08}
+h2{font-size:16px;margin:0 0 12px}textarea,input,select{font:inherit}textarea{width:100%;min-height:112px;resize:vertical;border:1px solid #ddddeb;border-radius:12px;padding:12px;line-height:1.6;outline-color:var(--purple)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+button.primary{background:var(--purple);color:white;border:0;border-radius:11px;padding:12px 16px;font-weight:700}
+button.secondary{background:var(--pale);color:var(--purple);border:0;border-radius:11px;padding:11px 14px;font-weight:700}
+button.ghost{background:white;border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:var(--ink)}
+.small{font-size:12px;color:var(--muted)}.field{border:1px solid var(--line);border-radius:10px;padding:10px;width:100%;background:white}
+#ocrText{min-height:80px}.task{border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:8px}
+.task strong{display:block}.task .meta{font-size:12px;color:var(--muted);margin-top:4px}.task button{align-self:center}
+.calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.month-title{font-size:20px;font-weight:800}
+.weekdays,.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.weekdays div{text-align:center;color:var(--muted);font-size:11px;padding:7px 0}
+.day{min-height:74px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 4px;text-align:left;position:relative;overflow:hidden}
+.day.out{opacity:.38}.day.today{border:2px solid var(--purple)}.day.selected{background:var(--pale);border:2px solid var(--purple)}
+.day .num{font-size:12px;font-weight:700}.dots{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px}.dot{width:6px;height:6px;border-radius:50%;background:var(--purple)}.day .count{font-size:10px;color:var(--muted);margin-top:4px}
+#selectedTitle{font-weight:800;margin-bottom:8px}.eventline{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.eventline:last-child{border:0}.eventline b{display:inline-block;min-width:52px;color:var(--purple)}
+.empty{color:var(--muted);font-size:13px;padding:12px 0}
+@media(max-width:430px){main{padding:12px}.day{min-height:62px;padding:5px 3px}.day .count{font-size:9px}.calendar-head .ghost{padding:8px}.card{padding:13px}}
+</style>
+</head>
+<body>
+<header><div class="brand">DAYCRAFT</div><div class="sub">予定を整えて、今日をつくる。</div></header>
+<nav><button id="tabPlan" class="active" onclick="switchTab('plan')">✦ 予定をつくる</button><button id="tabCal" onclick="switchTab('calendar')">▦ 月間カレンダー</button><button id="tabRoutine" onclick="switchTab('routine')">↻ ルーティン</button></nav>
+<main>
+<section id="plan" class="panel active">
+ <div class="card">
+  <h2>① 予定を文章で入力</h2>
+  <textarea id="inputText" placeholder="例：明日は9時から18時まで仕事。午前中に買い物をして、夜は小説を1時間書きたい。"></textarea>
+  <div class="row" style="margin-top:10px"><button class="primary" onclick="makePlan()">予定案を作成</button><button class="secondary" onclick="clearInput()">入力をクリア</button></div>
+  <p class="small">文章を入力して予定案を作成できます。内容はこの試作品内で処理されます。</p>
+ </div>
+ <div class="card">
+  <h2>② 画像から予定を読み取る</h2>
+  <input class="field" id="images" type="file" accept="image/*" multiple capture="environment">
+  <div class="row" style="margin-top:10px"><button class="secondary" onclick="readImages()">画像を読み取る</button><span class="small" id="ocrStatus">手書き・スクショ・書類に対応（OCR精度は画像によります）</span></div>
+  <textarea id="ocrText" placeholder="読み取った文字がここに表示されます。確認・修正してから予定案に追加できます。" style="margin-top:10px"></textarea>
+  <button class="ghost" style="margin-top:8px;width:100%" onclick="appendOCR()">読み取った文章を入力欄に追加</button>
+ </div>
+ <div class="card">
+  <h2>③ 予定案</h2>
+  <div class="row"><label class="small">対象日<input class="field" type="date" id="planDate"></label><label class="small">起床時刻<input class="field" type="time" id="wake" value="07:00"></label><label class="small">就寝時刻<input class="field" type="time" id="sleep" value="23:00"></label></div>
+  <div id="tasks"><div class="empty">文章を入力して「予定案を作成」を押してください。</div></div>
+  <div class="row"><button class="secondary" onclick="addTask()">＋ 予定を手動追加</button><button class="primary" onclick="savePlan()">カレンダーに反映</button></div>
+ </div>
+</section>
+<section id="calendar" class="panel">
+ <div class="card">
+  <div class="calendar-head"><button class="ghost" onclick="moveMonth(-1)">‹</button><div class="month-title" id="monthTitle"></div><button class="ghost" onclick="moveMonth(1)">›</button></div>
+  <div class="weekdays"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
+  <div class="days" id="days"></div>
+  <p class="small" style="margin:12px 0 0">● のある日には予定が登録されています。日付をタップすると下に詳細が表示されます。</p>
+ </div>
+ <div class="card"><div id="selectedTitle"></div><div id="dayEvents"></div><button class="secondary" style="width:100%;margin-top:10px" onclick="createForSelected()">＋ この日に予定を追加</button></div>
+</section>
+
+<section id="routine" class="panel">
+ <div class="card">
+  <h2>① ルーティンを登録</h2>
+  <p class="small">繰り返し使う予定をテンプレートとして登録できます。</p>
+  <label class="small">ルーティン名<input class="field" id="routineName" placeholder="例：小説執筆、筋トレ、英語学習"></label>
+  <div class="row" style="margin-top:9px">
+   <label class="small">開始時刻<input class="field" type="time" id="routineStart" value="19:00"></label>
+   <label class="small">所要時間（分）<input class="field" type="number" id="routineDuration" min="5" step="5" value="60"></label>
+  </div>
+  <div class="row" style="margin-top:10px"><button class="primary" onclick="registerRoutine()">ルーティンを登録</button><button class="secondary" onclick="resetRoutineForm()">入力をクリア</button></div>
+ </div>
+ <div class="card"><h2>② 登録済みルーティン</h2><div id="routineList"><div class="empty">まだ登録されていません。</div></div></div>
+ <div class="card">
+  <h2>③ カレンダーに挿入</h2>
+  <p class="small">ルーティンを選び、反映先の日付を指定してください。挿入すると月間カレンダーに反映されます。</p>
+  <label class="small">反映する日付<input class="field" type="date" id="routineDate"></label>
+  <div id="routinePicker" style="margin:10px 0"><div class="empty">ルーティンを登録すると、ここから選べます。</div></div>
+  <button class="primary" style="width:100%" onclick="insertSelectedRoutines()">選択したルーティンを挿入</button>
+ </div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let tasks=[], events=JSON.parse(localStorage.getItem('daycraftEvents')||'{}'), routines=JSON.parse(localStorage.getItem('daycraftRoutines')||'[]'), selectedRoutines=[], viewDate=new Date(), selectedDate=new Date();
+const pad=n=>String(n).padStart(2,'0'), key=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+function localToday(){let d=new Date();return key(d)}
+$('planDate').value=localToday();$('routineDate').value=localToday();
+function switchTab(t){['plan','calendar','routine'].forEach(x=>$(x).classList.toggle('active',x===t));['tabPlan','tabCal','tabRoutine'].forEach((id,i)=>$(id).classList.toggle('active',['plan','calendar','routine'][i]===t));if(t==='calendar')renderCalendar();if(t==='routine')renderRoutines()}
+function clearInput(){$('inputText').value=''}
+function makePlan(){
+ const raw=($('inputText').value+'\n'+$('ocrText').value).trim();if(!raw){alert('予定を文章で入力してください');return}
+ const date=$('planDate').value||localToday();let found=[];
+ // Lightweight demo parser: recognizes explicit times and splits natural-language requests into editable tasks.
+ const patterns=[...raw.matchAll(/(午前|午後)?\s*(\d{1,2})時(?:半|(\d{1,2})分)?(?:から|〜|～|-)?\s*(?:(午前|午後)?\s*(\d{1,2})時(?:半|(\d{1,2})分)?)?/g)];
+ if(patterns.length){patterns.forEach((m,i)=>{let h=+m[2];if(m[1]==='午後'&&h<12)h+=12;if(m[1]==='午前'&&h===12)h=0;let start=pad(h)+':'+pad(m[0].includes('半')?30:0);let end='';if(m[5]&&m[6]){let eh=+m[6];if(m[5]==='午後'&&eh<12)eh+=12;end=pad(eh)+':'+pad(m[0].includes('半')?30:0)}let left=raw.slice(Math.max(0,m.index-12),Math.min(raw.length,m.index+m[0].length+18)).replace(/\s+/g,' ').trim();found.push({title:left||'予定',start,end,duration:60,date})})}
+ if(!found.length){let pieces=raw.split(/[。\n、]/).map(s=>s.trim()).filter(s=>s.length>1);found=pieces.slice(0,8).map((s,i)=>({title:s,start:['09:00','10:30','13:00','15:00','19:00'][i]||'20:00',end:'',duration:60,date}))}
+ tasks=found;renderTasks();
+}
+function renderTasks(){let root=$('tasks');root.innerHTML='';if(!tasks.length){root.innerHTML='<div class="empty">予定はまだありません。</div>';return}tasks.forEach((t,i)=>{let el=document.createElement('div');el.className='task';el.innerHTML=`<div><input class="field" value="${esc(t.title)}" aria-label="予定名" oninput="tasks[${i}].title=this.value"><div class="row" style="margin-top:7px"><input class="field" type="time" value="${t.start}" onchange="tasks[${i}].start=this.value"><input class="field" type="number" min="15" step="15" value="${t.duration||60}" onchange="tasks[${i}].duration=+this.value" aria-label="所要時間（分）"></div><div class="meta">${t.date||$('planDate').value}</div></div><button class="ghost" onclick="tasks.splice(${i},1);renderTasks()">削除</button>`;root.appendChild(el)})}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function addTask(){tasks.push({title:'新しい予定',start:'09:00',duration:60,date:$('planDate').value||localToday()});renderTasks()}
+function savePlan(){let date=$('planDate').value||localToday();if(!tasks.length){alert('先に予定案を作成してください');return}events[date]=[...(events[date]||[]),...tasks.map(t=>({...t,date}))];persistEvents();selectedDate=new Date(date+'T12:00:00');viewDate=new Date(selectedDate);switchTab('calendar');renderCalendar()}
+function moveMonth(n){viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()+n,1);renderCalendar()}
+
+function persistEvents(){localStorage.setItem('daycraftEvents',JSON.stringify(events))}
+function persistRoutines(){localStorage.setItem('daycraftRoutines',JSON.stringify(routines))}
+function resetRoutineForm(){$('routineName').value='';$('routineStart').value='19:00';$('routineDuration').value=60}
+function registerRoutine(){
+ const name=$('routineName').value.trim(),start=$('routineStart').value,duration=Number($('routineDuration').value);
+ if(!name){alert('ルーティン名を入力してください');return}
+ if(!start||!duration||duration<5){alert('開始時刻と所要時間を確認してください');return}
+ routines.push({id:Date.now()+Math.random(),name,start,duration});persistRoutines();resetRoutineForm();renderRoutines()
+}
+function renderRoutines(){
+ $('routineList').innerHTML=routines.length?routines.map((r,i)=>`<div class="task"><div><strong>${esc(r.name)}</strong><div class="meta">${r.start} ・ ${r.duration}分</div></div><button class="ghost" onclick="removeRoutine(${i})">削除</button></div>`).join(''):'<div class="empty">まだ登録されていません。</div>';
+ $('routinePicker').innerHTML=routines.length?routines.map((r,i)=>`<label style="display:flex;gap:9px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line);font-size:14px"><input type="checkbox" onchange="toggleRoutine(${i},this.checked)"> <span><b>${esc(r.name)}</b><span class="small">　${r.start} / ${r.duration}分</span></span></label>`).join(''):'<div class="empty">ルーティンを登録すると、ここから選べます。</div>';
+}
+function removeRoutine(i){routines.splice(i,1);persistRoutines();renderRoutines()}
+function toggleRoutine(i,checked){if(checked){if(!selectedRoutines.includes(i))selectedRoutines.push(i)}else selectedRoutines=selectedRoutines.filter(x=>x!==i)}
+function insertSelectedRoutines(){
+ const date=$('routineDate').value||localToday();if(!selectedRoutines.length){alert('挿入するルーティンを選択してください');return}
+ const chosen=selectedRoutines.map(i=>routines[i]).filter(Boolean);
+ events[date]=[...(events[date]||[]),...chosen.map(r=>({title:r.name,start:r.start,duration:r.duration,date,source:'routine'}))];
+ persistEvents();selectedRoutines=[];selectedDate=new Date(date+'T12:00:00');viewDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);renderRoutines();switchTab('calendar');renderCalendar()
+}
+
+function renderCalendar(){
+ $('monthTitle').textContent=`${viewDate.getFullYear()}年 ${viewDate.getMonth()+1}月`;
+ const first=new Date(viewDate.getFullYear(),viewDate.getMonth(),1),start=new Date(first);start.setDate(1-first.getDay());
+ const today=localToday();let out='';
+ for(let i=0;i<42;i++){let d=new Date(start);d.setDate(start.getDate()+i);let k=key(d),items=events[k]||[];let cls='day'+(d.getMonth()!==viewDate.getMonth()?' out':'')+(k===today?' today':'')+(k===key(selectedDate)?' selected':'');
+ out+=`<button class="${cls}" onclick="selectDay('${k}')"><div class="num">${d.getDate()}</div>${items.length?`<div class="dots">${items.slice(0,4).map(()=>'<i class="dot"></i>').join('')}</div><div class="count">${items.length}件</div>`:''}</button>`}
+ $('days').innerHTML=out;renderDayEvents()
+}
+function selectDay(k){selectedDate=new Date(k+'T12:00:00');if(selectedDate.getMonth()!==viewDate.getMonth())viewDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);renderCalendar()}
+function renderDayEvents(){let k=key(selectedDate),items=events[k]||[];$('selectedTitle').textContent=`${selectedDate.getFullYear()}年${selectedDate.getMonth()+1}月${selectedDate.getDate()}日の予定`;$('dayEvents').innerHTML=items.length?items.map((e,i)=>`<div class="eventline"><b>${e.start||'時刻未定'}</b>${esc(e.title)} <button class="ghost" style="float:right;padding:4px 8px" onclick="deleteEvent('${k}',${i})">削除</button></div>`).join(''):'<div class="empty">この日の予定はありません。</div>'}
+function deleteEvent(k,i){events[k].splice(i,1);if(!events[k].length)delete events[k];persistEvents();renderCalendar()}
+function createForSelected(){ $('planDate').value=key(selectedDate);tasks=[];renderTasks();switchTab('plan');$('inputText').focus()}
+async function readImages(){let files=[...$('images').files];if(!files.length){alert('画像を選択してください');return}$('ocrStatus').textContent='OCRエンジンを読み込み中...';try{if(!window.Tesseract){await new Promise((res,rej)=>{let s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})}let text='';for(let f of files){$('ocrStatus').textContent=`読み取り中：${f.name}`;let r=await Tesseract.recognize(f,'jpn+eng');text+=r.data.text+'\n'}$('ocrText').value=text.trim();$('ocrStatus').textContent='読み取り完了。内容を確認・修正してください。'}catch(e){$('ocrStatus').textContent='読み取りに失敗しました。インターネット接続を確認してください。'}}
+function appendOCR(){let t=$('ocrText').value.trim();if(t)$('inputText').value+=($('inputText').value?'\n':'')+t}
+renderRoutines();renderCalendar();
+</script>
+</body></html>

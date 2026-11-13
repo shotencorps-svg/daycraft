@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DAYCRAFT 0.5.0 試作版</title>
+<style>
+:root{--ink:#202033;--muted:#77788c;--line:#e8e8f0;--bg:#f6f6fb;--purple:#6556d9;--pale:#eeecff;--green:#23866a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif}
+header{padding:22px 18px 14px;background:white;border-bottom:1px solid var(--line)}.brand{font-size:23px;font-weight:800;letter-spacing:.04em}.sub{color:var(--muted);font-size:12px;margin-top:3px}
+nav{display:flex;gap:8px;padding:12px 16px;background:white;position:sticky;top:0;z-index:3;border-bottom:1px solid var(--line)}
+nav button{flex:1;border:0;border-radius:12px;padding:12px 8px;background:#f2f2f7;color:#666;font-weight:700;font-size:14px}
+nav button.active{background:var(--purple);color:white}
+main{max-width:760px;margin:auto;padding:16px}.panel{display:none}.panel.active{display:block}
+.card{background:white;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 3px 14px #24244a08}
+h2{font-size:16px;margin:0 0 12px}textarea,input,select{font:inherit}textarea{width:100%;min-height:112px;resize:vertical;border:1px solid #ddddeb;border-radius:12px;padding:12px;line-height:1.6;outline-color:var(--purple)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+button.primary{background:var(--purple);color:white;border:0;border-radius:11px;padding:12px 16px;font-weight:700}
+button.secondary{background:var(--pale);color:var(--purple);border:0;border-radius:11px;padding:11px 14px;font-weight:700}
+button.ghost{background:white;border:1px solid var(--line);border-radius:10px;padding:9px 12px;color:var(--ink)}
+.small{font-size:12px;color:var(--muted)}.field{border:1px solid var(--line);border-radius:10px;padding:10px;width:100%;background:white}
+#ocrText{min-height:80px}.task{border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:8px}
+.task strong{display:block}.task .meta{font-size:12px;color:var(--muted);margin-top:4px}.task button{align-self:center}
+.calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.month-title{font-size:20px;font-weight:800}
+.weekdays,.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.weekdays div{text-align:center;color:var(--muted);font-size:11px;padding:7px 0}
+.day{min-height:74px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 4px;text-align:left;position:relative;overflow:hidden}
+.day.out{opacity:.38}.day.today{border:2px solid var(--purple)}.day.selected{background:var(--pale);border:2px solid var(--purple)}
+.day .num{font-size:12px;font-weight:700}.dots{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px}.dot{width:6px;height:6px;border-radius:50%;background:var(--purple)}.day .count{font-size:10px;color:var(--muted);margin-top:4px}
+#selectedTitle{font-weight:800;margin-bottom:8px}.eventline{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.eventline:last-child{border:0}.eventline b{display:inline-block;min-width:52px;color:var(--purple)}
+.empty{color:var(--muted);font-size:13px;padding:12px 0}
+@media(max-width:430px){main{padding:12px}.day{min-height:62px;padding:5px 3px}.day .count{font-size:9px}.calendar-head .ghost{padding:8px}.card{padding:13px}}
+
+.weekpick{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+.weekpick label{display:flex;align-items:center;gap:4px;background:#f3f2fb;border-radius:9px;padding:7px 9px;font-size:12px}
+.done{background:#e8f7f0!important;color:#16734f!important;border-color:#b8e4d0!important}
+.metric{background:linear-gradient(135deg,#6556d9,#897ce9);color:white;border-radius:16px;padding:18px}
+.metric strong{display:block;font-size:34px;line-height:1.2;margin-top:5px}
+.metric small{opacity:.85}
+.countgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.countitem{border:1px solid var(--line);border-radius:13px;padding:12px;background:white}
+.countitem strong{font-size:22px;display:block;color:var(--purple)}
+.countitem .small{margin-top:4px}
+.pill{display:inline-block;background:var(--pale);color:var(--purple);padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}
+
+
+nav{gap:6px;padding:9px 10px}nav button{position:relative;min-width:0;border:1px solid var(--line);border-radius:12px;padding:8px 3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:18px;min-height:58px}nav button span{font-size:19px;line-height:1}nav button small{font-size:10px;font-weight:700;line-height:1.2}nav button.active{background:var(--purple);color:white;border-color:var(--purple)}.tab-badge{position:absolute;top:3px;right:7px;background:#e34c64;color:white;border-radius:20px;min-width:17px;height:17px;padding:1px 4px;font-size:10px;font-style:normal;line-height:15px}nav button:has(.tab-badge[hidden]){ }
+</style>
+</head>
+<body>
+<header><div class="brand">DAYCRAFT</div><div class="sub">予定を整えて、今日をつくる。</div></header>
+<nav><button id="tabPlan" class="active" onclick="switchTab('plan')"><span>✦</span><small>予定</small><i id="planBadge" class="tab-badge" hidden>0</i></button><button id="tabCal" onclick="switchTab('calendar')"><span>▦</span><small>カレンダー</small></button><button id="tabRoutine" onclick="switchTab('routine')"><span>↻</span><small>ルーティン</small></button><button id="tabCount" onclick="switchTab('count')"><span>◎</span><small>カウント</small></button></nav>
+<main>
+<section id="plan" class="panel active">
+ <div class="card">
+  <h2>① 予定を文章で入力</h2>
+  <textarea id="inputText" placeholder="例：明日は9時から18時まで仕事。午前中に買い物をして、夜は小説を1時間書きたい。"></textarea>
+  <div class="row" style="margin-top:10px"><button class="primary" onclick="makePlan()">予定案を作成</button><button class="secondary" onclick="clearInput()">入力をクリア</button></div>
+  <p class="small">優先度・所要時間・固定時刻・休憩を考慮するローカル最適化エンジンで予定案を作成します。</p><label class="small" style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="badgeToggle" checked onchange="setBadgeEnabled(this.checked)"> 未完了予定数のバッジを表示</label>
+ </div>
+ <div class="card">
+  <h2>② 画像から予定を読み取る</h2>
+  <input class="field" id="images" type="file" accept="image/*" multiple>
+  <div class="row" style="margin-top:10px"><button class="secondary" onclick="readImages()">画像を読み取る</button><span class="small" id="ocrStatus">手書き・スクショ・書類に対応（OCR精度は画像によります）</span></div>
+  <textarea id="ocrText" placeholder="読み取った文字がここに表示されます。確認・修正してから予定案に追加できます。" style="margin-top:10px"></textarea>
+  <button class="ghost" style="margin-top:8px;width:100%" onclick="appendOCR()">読み取った文章を入力欄に追加</button>
+ </div>
+ <div class="card">
+  <h2>③ 予定案</h2>
+  <div class="row"><label class="small">対象日<input class="field" type="date" id="planDate"></label><label class="small">起床時刻<input class="field" type="time" id="wake" value="07:00"></label><label class="small">就寝時刻<input class="field" type="time" id="sleep" value="23:00"></label></div>
+  <div id="tasks"><div class="empty">文章を入力して「予定案を作成」を押してください。</div></div>
+  <div class="row"><button class="secondary" onclick="addTask()">＋ 予定を手動追加</button><button class="primary" onclick="savePlan()">カレンダーに反映</button></div>
+ </div>
+</section>
+<section id="calendar" class="panel">
+ <div class="card">
+  <div class="calendar-head"><button class="ghost" onclick="moveMonth(-1)">‹</button><div class="month-title" id="monthTitle"></div><button class="ghost" onclick="moveMonth(1)">›</button></div>
+  <div class="weekdays"><div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div></div>
+  <div class="days" id="days"></div>
+  <p class="small" style="margin:12px 0 0">● のある日には予定が登録されています。日付をタップすると下に詳細が表示されます。</p>
+ </div>
+ <div class="card"><div id="selectedTitle"></div><div class="row" style="margin:8px 0"><button class="secondary" onclick="optimizeSelectedDay()">✦ AIで残りの予定を再構成</button><button class="ghost" onclick="undoOptimization()" id="undoOptimize" disabled>元に戻す</button></div><div id="optimizerStatus" class="small" role="status"></div><div id="dayEvents"></div><button class="secondary" style="width:100%;margin-top:10px" onclick="createForSelected()">＋ この日に予定を追加</button></div>
+</section>
+
+<section id="routine" class="panel">
+ <div class="card">
+  <h2>① ルーティンを登録</h2>
+  <p class="small">繰り返し使う予定をテンプレートとして登録できます。</p>
+  <label class="small">ルーティン名<input class="field" id="routineName" placeholder="例：小説執筆、筋トレ、英語学習"></label>
+  <div class="weekpick" id="routineWeekdays"><label><input type="checkbox" value="0" checked>日</label><label><input type="checkbox" value="1" checked>月</label><label><input type="checkbox" value="2" checked>火</label><label><input type="checkbox" value="3" checked>水</label><label><input type="checkbox" value="4" checked>木</label><label><input type="checkbox" value="5" checked>金</label><label><input type="checkbox" value="6" checked>土</label></div>
+  <div class="row" style="margin-top:9px">
+   <label class="small">開始時刻（任意）<input class="field" type="time" id="routineStart" value=""></label>
+   <label class="small">所要時間（分）<input class="field" type="number" id="routineDuration" min="5" step="5" value="60"></label>
+  </div>
+  <div class="row" style="margin-top:10px"><button class="primary" onclick="registerRoutine()">ルーティンを登録</button><button class="secondary" onclick="resetRoutineForm()">入力をクリア</button></div>
+ </div>
+ <div class="card"><h2>② 隙間時間タスク</h2><p class="small">5〜55分の短いタスクを登録します。予定作成後、空き時間に各タスクを1日1回まで自動配置します。</p><div class="row"><input class="field" id="gapName" placeholder="例：読書、メール整理"><select class="field" id="gapDuration"><option value="5">5分</option><option value="10">10分</option><option value="15" selected>15分</option><option value="20">20分</option><option value="25">25分</option><option value="30">30分</option><option value="35">35分</option><option value="40">40分</option><option value="45">45分</option><option value="50">50分</option><option value="55">55分</option></select><button class="secondary" style="flex:0 0 auto" onclick="addGapTask()">追加</button></div><div id="gapTaskList"></div></div><div class="card"><h2>③ 登録済みルーティン</h2><div id="routineList"><div class="empty">まだ登録されていません。</div></div></div>
+ <div class="card">
+  <h2>④ カレンダーに挿入</h2>
+  <p class="small">ルーティンを選び、反映先の日付を指定してください。挿入すると月間カレンダーに反映されます。</p>
+  <label class="small">反映する日付<input class="field" type="date" id="routineDate"></label>
+  <div id="routinePicker" style="margin:10px 0"><div class="empty">ルーティンを登録すると、ここから選べます。</div></div>
+  <button class="primary" style="width:100%" onclick="insertSelectedRoutines()">選択したルーティンを指定日に挿入</button>
+  <button class="secondary" style="width:100%;margin-top:8px" onclick="insertRoutinesForMonth()">選択したルーティンをこの月に一括挿入</button>
+  <p class="small">曜日設定に合わせて対象月へ登録します。同じルーティンが同じ日に重複登録されることはありません。</p>
+ </div>
+
+ <div class="card">
+  <h2>⑤ やらないことリスト</h2>
+  <p class="small">登録した言葉を含む予定を作成すると警告します。登録自体は禁止しません。</p>
+  <div class="row"><input class="field" id="noDoInput" placeholder="例：夜更かし、ゲーム"><button class="secondary" style="flex:0 0 auto" onclick="addNoDo()">追加</button></div>
+  <div id="noDoList" style="margin-top:8px"></div>
+ </div>
+</section>
+<section id="count" class="panel">
+ <div class="card"><h2>今日の達成状況</h2><div class="metric"><small>現在の連続達成日数</small><strong id="streakNumber">0日</strong><small id="streakCaption">ルーティンの達成を記録しましょう</small></div><div class="countgrid" style="margin-top:12px"><div class="countitem"><strong id="totalDone">0日</strong><div class="small">累計達成日数</div></div><div class="countitem"><strong id="todayDone">0 / 0</strong><div class="small">今日の達成数</div></div></div></div>
+ <div class="card"><h2>カウントダウンを登録</h2><label class="small">イベント名<input class="field" id="countName" placeholder="例：プロジェクトマネージャ試験"></label><label class="small" style="display:block;margin-top:8px">目標日<input class="field" id="countDate" type="date"></label><button class="primary" style="width:100%;margin-top:10px" onclick="addCountdown()">カウントダウンを追加</button></div>
+ <div class="card"><h2>目標までの日数</h2><div id="countdownList"><div class="empty">まだ登録されていません。</div></div></div>
+ <div class="card"><h2>今日のルーティン達成チェック</h2><p class="small">ここからの手動チェックと、カレンダー上の達成チェックは同じ記録に反映されます。</p><div id="todayRoutineChecks"></div></div>
+ <div class="card" id="backupCard">
+  <h2>データのバックアップ・復元</h2>
+  <p class="small">予定、ルーティン、達成履歴、やらないことリスト、カウントダウンを1つのJSONファイルに保存します。機種変更や更新前にバックアップしてください。</p>
+  <button class="primary" style="width:100%;margin-top:8px" onclick="exportBackup()">バックアップを保存（JSON）</button>
+  <label class="small" style="display:block;margin-top:14px">バックアップファイルを選択<input class="field" id="backupFile" type="file" accept=".json,application/json" style="margin-top:6px"></label>
+  <button class="secondary" style="width:100%;margin-top:8px" onclick="restoreBackup()">選択したファイルから復元</button>
+  <p class="small" style="margin-top:10px">復元すると現在のDAYCRAFTデータがバックアップ内容に置き換わります。実行前に現在のデータもバックアップしてください。</p>
+  <div id="backupStatus" class="small" role="status" aria-live="polite"></div>
+ </div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let tasks=[], events=JSON.parse(localStorage.getItem('daycraftEvents')||'{}'), routines=JSON.parse(localStorage.getItem('daycraftRoutines')||'[]'), selectedRoutines=[], viewDate=new Date(), selectedDate=new Date();
+const pad=n=>String(n).padStart(2,'0'), key=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+function localToday(){let d=new Date();return key(d)}
+$('planDate').value=localToday();$('routineDate').value=localToday();
+function switchTab(t){['plan','calendar','routine'].forEach(x=>$(x).classList.toggle('active',x===t));['tabPlan','tabCal','tabRoutine'].forEach((id,i)=>$(id).classList.toggle('active',['plan','calendar','routine'][i]===t));if(t==='calendar')renderCalendar();if(t==='routine')renderRoutines()}
+function clearInput(){$('inputText').value=''}
+function makePlan(){
+ const raw=($('inputText').value+'\n'+$('ocrText').value).trim();if(!raw){alert('予定を文章で入力してください');return}
+ const date=$('planDate').value||localToday();let found=[];
+ // Lightweight demo parser: recognizes explicit times and splits natural-language requests into editable tasks.
+ const patterns=[...raw.matchAll(/(午前|午後)?\s*(\d{1,2})時(?:半|(\d{1,2})分)?(?:から|〜|～|-)?\s*(?:(午前|午後)?\s*(\d{1,2})時(?:半|(\d{1,2})分)?)?/g)];
+ if(patterns.length){patterns.forEach((m,i)=>{let h=+m[2];if(m[1]==='午後'&&h<12)h+=12;if(m[1]==='午前'&&h===12)h=0;let start=pad(h)+':'+pad(m[0].includes('半')?30:0);let end='';if(m[5]&&m[6]){let eh=+m[6];if(m[5]==='午後'&&eh<12)eh+=12;end=pad(eh)+':'+pad(m[0].includes('半')?30:0)}let left=raw.slice(Math.max(0,m.index-12),Math.min(raw.length,m.index+m[0].length+18)).replace(/\s+/g,' ').trim();found.push({title:left||'予定',start,end,duration:60,date})})}
+ if(!found.length){let pieces=raw.split(/[。\n、]/).map(s=>s.trim()).filter(s=>s.length>1);found=pieces.slice(0,8).map((s,i)=>({title:s,start:['09:00','10:30','13:00','15:00','19:00'][i]||'20:00',end:'',duration:60,date}))}
+ tasks=found;renderTasks();
+}
+function renderTasks(){let root=$('tasks');root.innerHTML='';if(!tasks.length){root.innerHTML='<div class="empty">予定はまだありません。</div>';return}tasks.forEach((t,i)=>{let el=document.createElement('div');el.className='task';el.innerHTML=`<div><input class="field" value="${esc(t.title)}" aria-label="予定名" oninput="tasks[${i}].title=this.value"><div class="row" style="margin-top:7px"><input class="field" type="time" value="${t.start}" onchange="tasks[${i}].start=this.value"><input class="field" type="number" min="15" step="15" value="${t.duration||60}" onchange="tasks[${i}].duration=+this.value" aria-label="所要時間（分）"></div><div class="meta">${t.date||$('planDate').value}</div></div><button class="ghost" onclick="tasks.splice(${i},1);renderTasks()">削除</button>`;root.appendChild(el)})}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function addTask(){tasks.push({title:'新しい予定',start:'09:00',duration:60,date:$('planDate').value||localToday()});renderTasks()}
+function savePlan(){let date=$('planDate').value||localToday();if(!tasks.length){alert('先に予定案を作成してください');return}events[date]=[...(events[date]||[]),...tasks.map(t=>({...t,date}))];persistEvents();selectedDate=new Date(date+'T12:00:00');viewDate=new Date(selectedDate);switchTab('calendar');renderCalendar()}
+function moveMonth(n){viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth()+n,1);renderCalendar()}
+
+function persistEvents(){localStorage.setItem('daycraftEvents',JSON.stringify(events))}
+function persistRoutines(){localStorage.setItem('daycraftRoutines',JSON.stringify(routines))}
+function resetRoutineForm(){$('routineName').value='';$('routineStart').value='19:00';$('routineDuration').value=60}
+function registerRoutine(){
+ const name=$('routineName').value.trim(),start=$('routineStart').value,duration=Number($('routineDuration').value);
+ if(!name){alert('ルーティン名を入力してください');return}
+ if(!start||!duration||duration<5){alert('開始時刻と所要時間を確認してください');return}
+ routines.push({id:Date.now()+Math.random(),name,start,duration});persistRoutines();resetRoutineForm();renderRoutines()
+}
+function renderRoutines(){
+ $('routineList').innerHTML=routines.length?routines.map((r,i)=>`<div class="task"><div><strong>${esc(r.name)}</strong><div class="meta">${r.start} ・ ${r.duration}分</div></div><button class="ghost" onclick="removeRoutine(${i})">削除</button></div>`).join(''):'<div class="empty">まだ登録されていません。</div>';
+ $('routinePicker').innerHTML=routines.length?routines.map((r,i)=>`<label style="display:flex;gap:9px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line);font-size:14px"><input type="checkbox" onchange="toggleRoutine(${i},this.checked)"> <span><b>${esc(r.name)}</b><span class="small">　${r.start} / ${r.duration}分</span></span></label>`).join(''):'<div class="empty">ルーティンを登録すると、ここから選べます。</div>';
+}
+function removeRoutine(i){routines.splice(i,1);persistRoutines();renderRoutines()}
+function toggleRoutine(i,checked){if(checked){if(!selectedRoutines.includes(i))selectedRoutines.push(i)}else selectedRoutines=selectedRoutines.filter(x=>x!==i)}
+function insertSelectedRoutines(){
+ const date=$('routineDate').value||localToday();if(!selectedRoutines.length){alert('挿入するルーティンを選択してください');return}
+ const chosen=selectedRoutines.map(i=>routines[i]).filter(Boolean);
+ events[date]=[...(events[date]||[]),...chosen.map(r=>({title:r.name,start:r.start,duration:r.duration,date,source:'routine'}))];
+ persistEvents();selectedRoutines=[];selectedDate=new Date(date+'T12:00:00');viewDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);renderRoutines();switchTab('calendar');renderCalendar()
+}
+
+function renderCalendar(){
+ $('monthTitle').textContent=`${viewDate.getFullYear()}年 ${viewDate.getMonth()+1}月`;
+ const first=new Date(viewDate.getFullYear(),viewDate.getMonth(),1),start=new Date(first);start.setDate(1-first.getDay());
+ const today=localToday();let out='';
+ for(let i=0;i<42;i++){let d=new Date(start);d.setDate(start.getDate()+i);let k=key(d),items=events[k]||[];let cls='day'+(d.getMonth()!==viewDate.getMonth()?' out':'')+(k===today?' today':'')+(k===key(selectedDate)?' selected':'');
+ out+=`<button class="${cls}" onclick="selectDay('${k}')"><div class="num">${d.getDate()}</div>${items.length?`<div class="dots">${items.slice(0,4).map(()=>'<i class="dot"></i>').join('')}</div><div class="count">${items.length}件</div>`:''}</button>`}
+ $('days').innerHTML=out;renderDayEvents()
+}
+function selectDay(k){selectedDate=new Date(k+'T12:00:00');if(selectedDate.getMonth()!==viewDate.getMonth())viewDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);renderCalendar()}
+function renderDayEvents(){let k=key(selectedDate),items=events[k]||[];$('selectedTitle').textContent=`${selectedDate.getFullYear()}年${selectedDate.getMonth()+1}月${selectedDate.getDate()}日の予定`;$('dayEvents').innerHTML=items.length?items.map((e,i)=>`<div class="eventline"><b>${e.start||'時刻未定'}</b>${esc(e.title)} <button class="ghost" style="float:right;padding:4px 8px" onclick="deleteEvent('${k}',${i})">削除</button></div>`).join(''):'<div class="empty">この日の予定はありません。</div>'}
+function deleteEvent(k,i){events[k].splice(i,1);if(!events[k].length)delete events[k];persistEvents();renderCalendar()}
+function createForSelected(){ $('planDate').value=key(selectedDate);tasks=[];renderTasks();switchTab('plan');$('inputText').focus()}
+async function readImages(){let files=[...$('images').files];if(!files.length){alert('画像を選択してください');return}$('ocrStatus').textContent='OCRエンジンを読み込み中...';try{if(!window.Tesseract){await new Promise((res,rej)=>{let s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})}let text='';for(let f of files){$('ocrStatus').textContent=`読み取り中：${f.name}`;let r=await Tesseract.recognize(f,'jpn+eng');text+=r.data.text+'\n'}$('ocrText').value=text.trim();$('ocrStatus').textContent='読み取り完了。内容を確認・修正してください。'}catch(e){$('ocrStatus').textContent='読み取りに失敗しました。インターネット接続を確認してください。'}}
+function appendOCR(){let t=$('ocrText').value.trim();if(t)$('inputText').value+=($('inputText').value?'\n':'')+t}
+renderRoutines();renderCalendar();
+</script>
+
+<script>
+/* DAYCRAFT 0.4.0 additions. Existing v0.3.3 storage keys are preserved. */
+const DC40 = {
+  noDo: JSON.parse(localStorage.getItem('daycraftNoDo') || '[]'),
+  history: JSON.parse(localStorage.getItem('daycraftAchievementHistory') || '{}'),
+  countdowns: JSON.parse(localStorage.getItem('daycraftCountdowns') || '[]')
+};
+function dcSave(){
+  localStorage.setItem('daycraftNoDo', JSON.stringify(DC40.noDo));
+  localStorage.setItem('daycraftAchievementHistory', JSON.stringify(DC40.history));
+  localStorage.setItem('daycraftCountdowns', JSON.stringify(DC40.countdowns));
+}
+function dcDays(r){return Array.isArray(r.days)&&r.days.length?r.days:[0,1,2,3,4,5,6]}
+function dcIsScheduled(r,k){return dcDays(r).includes(new Date(k+'T12:00:00').getDay())}
+function dcIsDone(rid,k){return !!(DC40.history[k]&&DC40.history[k][String(rid)])}
+function dcSetDone(rid,k,done){
+  if(!DC40.history[k]) DC40.history[k]={};
+  if(done) DC40.history[k][String(rid)]=true; else delete DC40.history[k][String(rid)];
+  if(!Object.keys(DC40.history[k]).length) delete DC40.history[k];
+  dcSave(); renderRoutines(); renderCalendar(); renderCount();
+}
+function dcScheduled(k){return routines.filter(r=>dcIsScheduled(r,k))}
+function dcDayComplete(k){const list=dcScheduled(k);return list.length>0&&list.every(r=>dcIsDone(r.id,k))}
+function dcStreak(){
+  let n=0,d=new Date();d.setHours(12,0,0,0);
+  for(let i=0;i<3660;i++){
+    const k=key(d),list=dcScheduled(k);
+    if(!list.length){d.setDate(d.getDate()-1);continue}
+    if(dcDayComplete(k)){n++;d.setDate(d.getDate()-1);continue}
+    if(i===0){d.setDate(d.getDate()-1);continue}
+    break;
+  }
+  return n;
+}
+function dcTotalDays(){return Object.keys(DC40.history).filter(k=>dcDayComplete(k)).length}
+function dcWarn(text){
+  const hits=DC40.noDo.filter(x=>x&&text.toLowerCase().includes(x.toLowerCase()));
+  return !hits.length||confirm('⚠️ やらないことリストに該当します：'+hits.join('、')+'\n\nそれでも予定を登録しますか？');
+}
+function addNoDo(){const v=$('noDoInput').value.trim();if(!v)return;if(!DC40.noDo.some(x=>x.toLowerCase()===v.toLowerCase()))DC40.noDo.push(v);$('noDoInput').value='';dcSave();renderNoDo()}
+function removeNoDo(i){DC40.noDo.splice(i,1);dcSave();renderNoDo()}
+function renderNoDo(){const root=$('noDoList');if(!root)return;root.innerHTML=DC40.noDo.length?DC40.noDo.map((x,i)=>`<div class="eventline">${esc(x)} <button class="ghost" style="float:right;padding:4px 8px" onclick="removeNoDo(${i})">削除</button></div>`).join(''):'<div class="empty">登録はありません。</div>'}
+function dcCheckWarning(items){return dcWarn(items.map(t=>t.title||'').join(' '))}
+const dcOriginalSavePlan=savePlan;
+savePlan=function(){if(!tasks.length){alert('先に予定案を作成してください');return}if(dcCheckWarning(tasks))dcOriginalSavePlan()};
+const dcOriginalRegister=registerRoutine;
+registerRoutine=function(){
+  const days=[...document.querySelectorAll('#routineWeekdays input:checked')].map(x=>Number(x.value));
+  if(!days.length){alert('実施する曜日を1つ以上選択してください');return}
+  const before=routines.length;dcOriginalRegister();
+  if(routines.length>before){routines[routines.length-1].days=days;persistRoutines();renderRoutines()}
+};
+const dcOriginalRenderRoutines=renderRoutines;
+renderRoutines=function(){
+  dcOriginalRenderRoutines();
+  const list=$('routineList');
+  if(list&&routines.length)list.innerHTML=routines.map((r,i)=>{
+    const days=dcDays(r).map(d=>'日月火水木金土'[d]).join('・'),done=dcIsDone(r.id,localToday());
+    return `<div class="task"><div><strong>${esc(r.name)}</strong><div class="meta">${r.start} ・ ${r.duration}分 ・ ${days}</div><span class="pill">${done?'今日達成済み':'今日の達成を記録できます'}</span></div><div style="display:flex;gap:5px;flex-direction:column"><button class="${done?'ghost':'secondary'}" onclick="dcSetDone('${String(r.id)}',localToday(),${!done})">${done?'達成取消':'手動で達成'}</button><button class="ghost" onclick="removeRoutine(${i})">削除</button></div></div>`;
+  }).join('');
+  renderNoDo();
+};
+renderDayEvents=function(){
+  const k=key(selectedDate),items=events[k]||[];
+  $('selectedTitle').textContent=`${selectedDate.getFullYear()}年${selectedDate.getMonth()+1}月${selectedDate.getDate()}日の予定`;
+  $('dayEvents').innerHTML=items.length?items.map((e,i)=>{
+    const r=routines.find(x=>String(x.id)===String(e.routineId)),done=!!(r&&dcIsDone(r.id,k));
+    const action=r?`<button class="ghost ${done?'done':''}" style="margin-left:6px;padding:4px 7px" onclick="dcSetDone('${String(r.id)}','${k}',${!done})">${done?'達成済み':'達成'}</button>`:'';
+    return `<div class="eventline"><b>${e.start||'時刻未定'}</b>${esc(e.title)} ${action}<button class="ghost" style="float:right;padding:4px 8px" onclick="deleteEvent('${k}',${i})">削除</button></div>`;
+  }).join(''):'<div class="empty">この日の予定はありません。</div>';
+};
+insertSelectedRoutines=function(){
+  const date=$('routineDate').value||localToday();
+  if(!selectedRoutines.length){alert('挿入するルーティンを選択してください');return}
+  const chosen=selectedRoutines.map(i=>routines[i]).filter(Boolean);
+  if(!dcCheckWarning(chosen.map(r=>({title:r.name}))))return;
+  events[date]=[...(events[date]||[]),...chosen.map(r=>({title:r.name,start:r.start,duration:r.duration,date,source:'routine',routineId:r.id}))];
+  persistEvents();selectedRoutines=[];selectedDate=new Date(date+'T12:00:00');viewDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);renderRoutines();switchTab('calendar');renderCalendar();
+};
+
+function insertRoutinesForMonth(){
+  if(!selectedRoutines.length){alert('挿入するルーティンを選択してください');return}
+  const anchor=$('routineDate').value||localToday();
+  const base=new Date(anchor+'T12:00:00');
+  const year=base.getFullYear(),month=base.getMonth();
+  const chosen=selectedRoutines.map(i=>routines[i]).filter(Boolean);
+  if(!dcCheckWarning(chosen.map(r=>({title:r.name}))))return;
+  let added=0,skipped=0;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  for(let day=1;day<=daysInMonth;day++){
+    const d=new Date(year,month,day,12),k=key(d);
+    for(const r of chosen){
+      if(!dcIsScheduled(r,k))continue;
+      const exists=(events[k]||[]).some(e=>String(e.routineId||'')===String(r.id));
+      if(exists){skipped++;continue}
+      if(!events[k])events[k]=[];
+      events[k].push({title:r.name,start:r.start,duration:r.duration,date:k,source:'routine',routineId:r.id});
+      added++;
+    }
+  }
+  persistEvents();selectedRoutines=[];
+  selectedDate=new Date(year,month,1,12);viewDate=new Date(year,month,1);
+  renderRoutines();switchTab('calendar');renderCalendar();
+  alert(`${year}年${month+1}月に${added}件登録しました。\\n重複のため${skipped}件はスキップしました。`);
+}
+function addCountdown(){const name=$('countName').value.trim(),date=$('countDate').value;if(!name||!date){alert('イベント名と日付を入力してください');return}DC40.countdowns.push({id:Date.now()+Math.random(),name,date});dcSave();$('countName').value='';$('countDate').value='';renderCount()}
+function removeCountdown(i){DC40.countdowns.splice(i,1);dcSave();renderCount()}
+function renderCount(){
+  const today=localToday(),streak=dcStreak(),list=dcScheduled(today),done=list.filter(r=>dcIsDone(r.id,today)).length;
+  $('streakNumber').textContent=streak+'日';$('streakCaption').textContent=streak?'達成記録を積み重ねています':'今日のルーティンから始めましょう';
+  $('totalDone').textContent=dcTotalDays()+'日';$('todayDone').textContent=done+' / '+list.length;
+  $('todayRoutineChecks').innerHTML=list.length?list.map(r=>{const yes=dcIsDone(r.id,today);return `<div class="eventline"><b>${r.start}</b>${esc(r.name)} <button class="secondary" style="float:right;padding:5px 9px" onclick="dcSetDone('${String(r.id)}','${today}',${!yes})">${yes?'達成取消':'達成'}</button></div>`}).join(''):'<div class="empty">今日実施するルーティンはありません。</div>';
+  $('countdownList').innerHTML=DC40.countdowns.length?DC40.countdowns.map((c,i)=>{const diff=Math.ceil((new Date(c.date+'T00:00:00')-new Date(today+'T00:00:00'))/86400000),label=diff>0?'あと'+diff+'日':diff===0?'本番当日':'期限超過 '+Math.abs(diff)+'日';return `<div class="eventline"><strong>${esc(c.name)}</strong><div class="meta">${c.date} ・ <b>${label}</b></div><button class="ghost" style="float:right;padding:4px 8px" onclick="removeCountdown(${i})">削除</button></div>`}).join(''):'<div class="empty">まだ登録されていません。</div>';
+}
+switchTab=function(t){
+  ['plan','calendar','routine','count'].forEach(x=>$(x).classList.toggle('active',x===t));
+  ['tabPlan','tabCal','tabRoutine','tabCount'].forEach((id,i)=>$(id).classList.toggle('active',['plan','calendar','routine','count'][i]===t));
+  if(t==='calendar')renderCalendar();if(t==='routine')renderRoutines();if(t==='count')renderCount();
+};
+const dcOriginalMakePlan=makePlan;
+makePlan=function(){
+  dcOriginalMakePlan();
+  if(tasks.length){const hits=DC40.noDo.filter(x=>x&&tasks.map(t=>t.title).join(' ').toLowerCase().includes(x.toLowerCase()));if(hits.length)alert('⚠️ やらないことリストに該当します：'+hits.join('、')+'\n\n予定案を確認し、必要に応じて修正してください。')}
+};
+// DAYCRAFT 0.4.1: portable JSON backup and validated restore.
+const DC_BACKUP_KEYS = {
+  events: 'daycraftEvents',
+  routines: 'daycraftRoutines',
+  noDo: 'daycraftNoDo',
+  history: 'daycraftAchievementHistory',
+  countdowns: 'daycraftCountdowns'
+};
+function dcReadStored(key, fallback){
+  const raw=localStorage.getItem(key);
+  if(raw===null)return fallback;
+  try{return JSON.parse(raw)}catch(_){return fallback}
+}
+function exportBackup(){
+  try{
+    const payload={
+      app:'DAYCRAFT', backupVersion:1, appVersion:'0.4.1', createdAt:new Date().toISOString(),
+      data:{
+        events:dcReadStored(DC_BACKUP_KEYS.events,{}),
+        routines:dcReadStored(DC_BACKUP_KEYS.routines,[]),
+        noDo:dcReadStored(DC_BACKUP_KEYS.noDo,[]),
+        history:dcReadStored(DC_BACKUP_KEYS.history,{}),
+        countdowns:dcReadStored(DC_BACKUP_KEYS.countdowns,[]),
+        gapTasks:dcReadStored('daycraftGapTasks',[]),
+        settings:dcReadStored('daycraftSettings',{})
+      }
+    };
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+    a.href=url;a.download='DAYCRAFT_backup_'+stamp+'.json';
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    $('backupStatus').textContent='バックアップファイルを作成しました。ファイルアプリ等に保存されたことを確認してください。';
+  }catch(e){$('backupStatus').textContent='バックアップに失敗しました。空き容量を確認してください。';}
+}
+function dcValidateBackup(obj){
+  if(!obj||obj.app!=='DAYCRAFT'||!obj.data||typeof obj.data!=='object')return 'DAYCRAFTのバックアップファイルではありません。';
+  const d=obj.data;
+  if(!d.events||typeof d.events!=='object'||Array.isArray(d.events))return '予定データの形式が正しくありません。';
+  if(!Array.isArray(d.routines))return 'ルーティンデータの形式が正しくありません。';
+  if(d.noDo!==undefined&&!Array.isArray(d.noDo))return 'やらないことリストの形式が正しくありません。';
+  if(d.history!==undefined&&(!d.history||typeof d.history!=='object'||Array.isArray(d.history)))return '達成履歴の形式が正しくありません。';
+  if(d.countdowns!==undefined&&!Array.isArray(d.countdowns))return 'カウントダウンの形式が正しくありません。';
+  return '';
+}
+async function restoreBackup(){
+  const file=$('backupFile').files[0];
+  if(!file){$('backupStatus').textContent='先にバックアップJSONファイルを選択してください。';return;}
+  if(file.size>10*1024*1024){$('backupStatus').textContent='ファイルが大きすぎます。正しいバックアップファイルを選択してください。';return;}
+  try{
+    const obj=JSON.parse(await file.text()),problem=dcValidateBackup(obj);
+    if(problem){$('backupStatus').textContent=problem;return;}
+    const when=obj.createdAt?new Date(obj.createdAt).toLocaleString('ja-JP'):'日時不明';
+    if(!confirm('バックアップ日時：'+when+'\n\n現在のDAYCRAFTデータをこの内容に置き換えて復元します。よろしいですか？'))return;
+    const d=obj.data;
+    localStorage.setItem(DC_BACKUP_KEYS.events,JSON.stringify(d.events));
+    localStorage.setItem(DC_BACKUP_KEYS.routines,JSON.stringify(d.routines));
+    localStorage.setItem(DC_BACKUP_KEYS.noDo,JSON.stringify(d.noDo||[]));
+    localStorage.setItem(DC_BACKUP_KEYS.history,JSON.stringify(d.history||{}));
+    localStorage.setItem(DC_BACKUP_KEYS.countdowns,JSON.stringify(d.countdowns||[]));
+    localStorage.setItem('daycraftGapTasks',JSON.stringify(d.gapTasks||[]));
+    localStorage.setItem('daycraftSettings',JSON.stringify(d.settings||{badge:true}));
+    $('backupStatus').textContent='復元しました。画面を再読み込みします。';
+    setTimeout(()=>location.reload(),500);
+  }catch(e){$('backupStatus').textContent='ファイルを読み込めませんでした。JSON形式のバックアップを選択してください。';}
+}
+renderNoDo();renderRoutines();renderCalendar();renderCount();
+</script>
+
+<script>
+/* DAYCRAFT 0.5.0 local-first enhancements. Existing 0.4.1 storage keys remain intact. */
+const DC50={gapKey:'daycraftGapTasks',settingsKey:'daycraftSettings',undo:null};
+function dc50Read(k,f){try{const v=JSON.parse(localStorage.getItem(k));return v??f}catch(_){return f}}
+function dc50Save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+let gapTasks=dc50Read(DC50.gapKey,[]),dc50Settings=dc50Read(DC50.settingsKey,{badge:true});
+function setBadgeEnabled(v){dc50Settings.badge=!!v;dc50Save(DC50.settingsKey,dc50Settings);updatePlanBadge()}
+function updatePlanBadge(){const el=$('planBadge');if(!el)return;const today=localToday();const n=(events[today]||[]).filter(e=>!e.completed&&!(e.routineId&&dcIsDone(e.routineId,today))).length;el.textContent=n>99?'99+':n;el.hidden=!dc50Settings.badge||n===0;if($('badgeToggle'))$('badgeToggle').checked=!!dc50Settings.badge}
+function addGapTask(){const name=$('gapName').value.trim(),duration=Number($('gapDuration').value);if(!name){alert('タスク名を入力してください');return}gapTasks.push({id:'gap-'+Date.now()+'-'+Math.random().toString(36).slice(2,7),name,duration});dc50Save(DC50.gapKey,gapTasks);$('gapName').value='';renderGapTasks()}
+function removeGapTask(i){gapTasks.splice(i,1);dc50Save(DC50.gapKey,gapTasks);renderGapTasks()}
+function renderGapTasks(){const el=$('gapTaskList');if(!el)return;el.innerHTML=gapTasks.length?gapTasks.map((g,i)=>`<div class="eventline"><b>${g.duration}分</b>${esc(g.name)}<button class="ghost" style="float:right;padding:4px 8px" onclick="removeGapTask(${i})">削除</button></div>`).join(''):'<div class="empty">隙間時間タスクはまだありません。</div>'}
+function dc50Time(s){if(!s)return null;const m=/^(\d{1,2}):(\d{2})$/.exec(s);return m?Number(m[1])*60+Number(m[2]):null}
+function dc50Fmt(n){return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')}
+function dc50PlaceGapTasks(date){const list=events[date]||[],used=new Set(list.filter(e=>e.gapTaskId).map(e=>e.gapTaskId));let slots=list.filter(e=>e.start&&e.duration>0).map(e=>({s:dc50Time(e.start),e:dc50Time(e.start)+Number(e.duration)})).filter(x=>x.s!==null).sort((a,b)=>a.s-b.s);let cursor=dc50Time($('wake')?.value||'07:00')??420;const end=dc50Time($('sleep')?.value||'23:00')??1380;let added=0;for(const g of gapTasks){if(used.has(g.id))continue;let pos=cursor;for(const block of slots){if(block.s-pos>=g.duration)break;if(block.e>pos)pos=block.e}if(end-pos<g.duration)continue;const ev={title:g.name,start:dc50Fmt(pos),duration:g.duration,date,source:'gap',gapTaskId:g.id};list.push(ev);slots.push({s:pos,e:pos+g.duration});slots.sort((a,b)=>a.s-b.s);cursor=pos+g.duration;added++}if(added){events[date]=list.sort((a,b)=>(dc50Time(a.start)??9999)-(dc50Time(b.start)??9999));persistEvents()}return added}
+// Smart parser: extract task phrases, duration, priority and explicit times. The result stays editable.
+function dc50Parse(raw,date){const parts=raw.split(/[。\n、]+/).map(x=>x.trim()).filter(Boolean),out=[];for(const p of parts){if(/^(明日|今日|あした|きょう|予定|スケジュール)/.test(p)&&p.length<5)continue;let tm=p.match(/(午前|午後)?\s*(\d{1,2})時(半|\d{1,2}分)?/),start='';if(tm){let h=+tm[2];if(tm[1]==='午後'&&h<12)h+=12;if(tm[1]==='午前'&&h===12)h=0;start=dc50Fmt(h*60+(tm[3]==='半'?30:/\d+分/.test(tm[3]||'')?Number((tm[3]||'').match(/\d+/)[0]):0))}let dm=p.match(/(\d+)\s*(時間|分)/),duration=dm?(Number(dm[1])*(dm[2]==='時間'?60:1)):60;if(/1時間半/.test(p))duration=90;let priority=/最優先|絶対|重要|急ぎ|至急/.test(p)?3:/できれば|余裕があれば/.test(p)?1:2;let title=p.replace(/(午前|午後)?\s*\d{1,2}時(?:半|\d{1,2}分)?/g,'').replace(/\d+\s*(時間|分)(半)?/g,'').replace(/^(明日|今日|あした|きょう)は?/,'').trim();title=title.replace(/^(に|は|を|の)+/,'').trim()||p;out.push({title,start,duration,priority,date,fixed:/固定|変更不可|動かさない/.test(p)})}return out.slice(0,20)}
+const dc50OldMakePlan=makePlan;
+makePlan=function(){const raw=($('inputText').value+'\n'+$('ocrText').value).trim();if(!raw){alert('予定を文章で入力してください');return}const date=$('planDate').value||localToday();tasks=dc50Parse(raw,date);if(!tasks.length){dc50OldMakePlan();return}dc50OptimizeDraft();renderTasks();const hits=DC40.noDo.filter(x=>x&&tasks.some(t=>t.title.toLowerCase().includes(x.toLowerCase())));if(hits.length)alert('⚠️ やらないことリストに該当します：'+hits.join('、')+'\n予定案を確認してください。')};
+function dc50OptimizeDraft(){const start=dc50Time($('wake').value)||420,end=dc50Time($('sleep').value)||1380;let cursor=start;const fixed=tasks.filter(t=>t.fixed&&t.start).sort((a,b)=>dc50Time(a.start)-dc50Time(b.start));const floating=tasks.filter(t=>!t.fixed).sort((a,b)=>(b.priority||2)-(a.priority||2)||b.duration-a.duration);for(const t of floating){let pos=cursor;for(const f of fixed){const fs=dc50Time(f.start),fe=fs+(f.duration||60);if(pos+(t.duration||60)<=fs)break;if(fe>pos)pos=fe}if(pos+(t.duration||60)>end){t.start='';t.unplaced=true}else{t.start=dc50Fmt(pos);t.unplaced=false;cursor=pos+(t.duration||60)+10}}}
+renderTasks=function(){let root=$('tasks');root.innerHTML='';if(!tasks.length){root.innerHTML='<div class="empty">予定はまだありません。</div>';return}tasks.forEach((t,i)=>{let el=document.createElement('div');el.className='task';el.innerHTML=`<div><input class="field" value="${esc(t.title)}" aria-label="予定名" oninput="tasks[${i}].title=this.value"><div class="row" style="margin-top:7px"><input class="field" type="time" value="${t.start||''}" onchange="tasks[${i}].start=this.value;tasks[${i}].fixed=!!this.value" aria-label="開始時刻"><input class="field" type="number" min="5" step="5" value="${t.duration||60}" onchange="tasks[${i}].duration=+this.value" aria-label="所要時間（分）"></div><div class="row" style="margin-top:6px"><label class="small">優先度<select class="field" onchange="tasks[${i}].priority=+this.value"><option value="1" ${t.priority===1?'selected':''}>低</option><option value="2" ${!t.priority||t.priority===2?'selected':''}>普通</option><option value="3" ${t.priority===3?'selected':''}>高</option></select></label><label class="small" style="display:flex;align-items:center;gap:5px"><input type="checkbox" ${t.fixed?'checked':''} onchange="tasks[${i}].fixed=this.checked"> 時刻固定</label></div><div class="meta">${t.unplaced?'時間内に配置できません':(t.date||$('planDate').value)}</div></div><button class="ghost" onclick="tasks.splice(${i},1);renderTasks()">削除</button>`;root.appendChild(el)})};
+// Preserve flexible routine start times in both the template and calendar event.
+const dc50OldRegister=registerRoutine;
+registerRoutine=function(){const name=$('routineName').value.trim(),start=$('routineStart').value,duration=Number($('routineDuration').value),days=[...document.querySelectorAll('#routineWeekdays input:checked')].map(x=>Number(x.value));if(!name){alert('ルーティン名を入力してください');return}if(!duration||duration<5){alert('所要時間を確認してください');return}if(!days.length){alert('実施する曜日を1つ以上選択してください');return}routines.push({id:Date.now()+Math.random(),name,start:start||'',duration,days});persistRoutines();resetRoutineForm();renderRoutines()};
+renderRoutines=function(){$('routineList').innerHTML=routines.length?routines.map((r,i)=>`<div class="task"><div><strong>${esc(r.name)}</strong><div class="meta">${r.start||'時刻指定なし'} ・ ${r.duration}分 ・ ${(r.days||[0,1,2,3,4,5,6]).length}曜日</div></div><button class="ghost" onclick="removeRoutine(${i})">削除</button></div>`).join(''):'<div class="empty">まだ登録されていません。</div>';$('routinePicker').innerHTML=routines.length?routines.map((r,i)=>`<label style="display:flex;gap:9px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line);font-size:14px"><input type="checkbox" onchange="toggleRoutine(${i},this.checked)"> <span><b>${esc(r.name)}</b><span class="small">　${r.start||'時刻指定なし'} / ${r.duration}分</span></span></label>`).join(''):'<div class="empty">ルーティンを登録すると、ここから選べます。</div>';renderGapTasks()};
+// Rewrite routine insertion to handle flexible time and preserve duplicate protection.
+insertSelectedRoutines=function(){const date=$('routineDate').value||localToday();if(!selectedRoutines.length){alert('挿入するルーティンを選択してください');return}const chosen=selectedRoutines.map(i=>routines[i]).filter(Boolean);if(!dcCheckWarning(chosen.map(r=>({title:r.name}))))return;const existing=new Set((events[date]||[]).map(e=>String(e.routineId||'')));const add=chosen.filter(r=>!existing.has(String(r.id))).map(r=>({title:r.name,start:r.start||'',duration:r.duration,date,source:'routine',routineId:r.id}));events[date]=[...(events[date]||[]),...add];persistEvents();selectedRoutines=[];selectedDate=new Date(date+'T12:00:00');viewDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);renderRoutines();switchTab('calendar');renderCalendar()};
+const dc50OldMonth=insertRoutinesForMonth;
+insertRoutinesForMonth=function(){if(!selectedRoutines.length){alert('挿入するルーティンを選択してください');return}const anchor=$('routineDate').value||localToday(),base=new Date(anchor+'T12:00:00'),year=base.getFullYear(),month=base.getMonth(),chosen=selectedRoutines.map(i=>routines[i]).filter(Boolean);if(!dcCheckWarning(chosen.map(r=>({title:r.name}))))return;let added=0,skipped=0;for(let day=1;day<=new Date(year,month+1,0).getDate();day++){const d=new Date(year,month,day,12),k=key(d);for(const r of chosen){if(!dcIsScheduled(r,k))continue;const exists=(events[k]||[]).some(e=>String(e.routineId||'')===String(r.id));if(exists){skipped++;continue}if(!events[k])events[k]=[];events[k].push({title:r.name,start:r.start||'',duration:r.duration,date:k,source:'routine',routineId:r.id});added++}}persistEvents();selectedRoutines=[];selectedDate=new Date(year,month,1,12);viewDate=new Date(year,month,1);renderRoutines();switchTab('calendar');renderCalendar();alert(`${year}年${month+1}月に${added}件登録しました。重複${skipped}件をスキップしました。`)};
+// Insert gap tasks automatically after saving a schedule.
+const dc50OldSavePlan=savePlan;
+savePlan=function(){if(!tasks.length){alert('先に予定案を作成してください');return}if(!dcCheckWarning(tasks.map(t=>({title:t.title}))))return;const date=$('planDate').value||localToday();events[date]=[...(events[date]||[]),...tasks.map(t=>({...t,date,priority:t.priority||2,fixed:!!t.fixed}))];const placed=dc50PlaceGapTasks(date);persistEvents();selectedDate=new Date(date+'T12:00:00');viewDate=new Date(selectedDate);switchTab('calendar');renderCalendar();if(placed)alert(`予定を登録し、隙間時間タスクを${placed}件配置しました。`)};
+// Keep task completion and badge count in sync.
+const dc50OldSetDone=dcSetDone;
+dcSetDone=function(rid,k,done){dc50OldSetDone(rid,k,done);updatePlanBadge()};
+function optimizeSelectedDay(){const date=key(selectedDate),list=events[date]||[];if(!list.length){$('optimizerStatus').textContent='この日に再構成できる予定はありません。';return}DC50.undo={date,data:JSON.parse(JSON.stringify(list))};$('undoOptimize').disabled=false;const nowDate=localToday(),now=dc50Time(new Date().toTimeString().slice(0,5));let fixed=[],movable=[];for(const e of list){const st=dc50Time(e.start),done=!!e.completed,past=date<nowDate||(date===nowDate&&st!==null&&st<now);if(done||past||e.fixed||e.source==='fixed')fixed.push(e);else movable.push(e)}fixed.sort((a,b)=>(dc50Time(a.start)??0)-(dc50Time(b.start)??0));movable.sort((a,b)=>(b.priority||2)-(a.priority||2)||(dc50Time(a.deadline)||9999)-(dc50Time(b.deadline)||9999));let cursor=Math.max(dc50Time($('wake')?.value||'07:00')||420,date===nowDate?now:0),end=dc50Time($('sleep')?.value||'23:00')||1380,placed=0,miss=[];for(const e of movable){let dur=Math.max(5,Number(e.duration)||60),pos=cursor;const blocks=fixed.filter(x=>dc50Time(x.start)!==null).map(x=>({s:dc50Time(x.start),e:dc50Time(x.start)+(Number(x.duration)||60)})).sort((a,b)=>a.s-b.s);for(const b of blocks){if(pos+dur<=b.s)break;if(b.e>pos)pos=b.e}if(pos+dur<=end){e.start=dc50Fmt(pos);e.date=date;cursor=pos+dur+10;placed++}else{e.start='';e.postponed=true;miss.push(e.title)}}events[date]=[...fixed,...movable].sort((a,b)=>(dc50Time(a.start)??9999)-(dc50Time(b.start)??9999));persistEvents();renderCalendar();$('optimizerStatus').textContent=`再構成完了：${placed}件を配置。${miss.length?`未配置：${miss.join('、')}`:'未配置の予定はありません。'}`;updatePlanBadge()}
+function undoOptimization(){if(!DC50.undo)return;events[DC50.undo.date]=DC50.undo.data;persistEvents();DC50.undo=null;$('undoOptimize').disabled=true;$('optimizerStatus').textContent='再構成前の予定に戻しました。';renderCalendar();updatePlanBadge()}
+// Add completion toggles for ordinary calendar events, too.
+const dc50RenderDay=renderDayEvents;
+renderDayEvents=function(){const k=key(selectedDate),items=events[k]||[];$('selectedTitle').textContent=`${selectedDate.getFullYear()}年${selectedDate.getMonth()+1}月${selectedDate.getDate()}日の予定`; $('dayEvents').innerHTML=items.length?items.map((e,i)=>{const routine=routines.find(r=>String(r.id)===String(e.routineId)),done=routine?dcIsDone(routine.id,k):!!e.completed;return `<div class="eventline"><b>${e.start||'時刻未定'}</b>${esc(e.title)} <button class="ghost ${done?'done':''}" style="margin-left:5px;padding:4px 7px" onclick="${routine?`dcSetDone('${String(routine.id)}','${k}',${!done})`:`toggleEventDone('${k}',${i})`}">${done?'達成済み':'達成'}</button><button class="ghost" style="float:right;padding:4px 8px" onclick="deleteEvent('${k}',${i})">削除</button><div class="meta">${e.duration||'?'}分${e.postponed?' ・ 未配置':''}</div></div>`}).join(''):'<div class="empty">この日の予定はありません。</div>';};
+function toggleEventDone(k,i){const e=events[k]?.[i];if(!e)return;e.completed=!e.completed;persistEvents();renderCalendar();updatePlanBadge()}
+const dc50OldDelete=deleteEvent;
+deleteEvent=function(k,i){dc50OldDelete(k,i);updatePlanBadge()};
+// Navigation icon labels and settings initialization.
+const dc50OldSwitch=switchTab;
+switchTab=function(t){dc50OldSwitch(t);if(t==='calendar'){$('undoOptimize').disabled=!DC50.undo||DC50.undo.date!==key(selectedDate)}updatePlanBadge()};
+$('badgeToggle').checked=!!dc50Settings.badge;renderGapTasks();updatePlanBadge();renderCalendar();
+</script>
+</body></html>
